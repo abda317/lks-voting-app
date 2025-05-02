@@ -1,0 +1,20 @@
+# Menggunakan Node.js image
+FROM node:16
+
+# Menentukan working directory dalam container
+WORKDIR /app
+
+# Menyalin semua file dari folder frontend ke dalam container
+COPY . .
+
+# Install dependencies
+RUN npm install
+
+# Membuat build untuk aplikasi frontend
+RUN npm run build
+
+# Menentukan port yang akan digunakan
+EXPOSE 80
+
+# Menjalankan aplikasi frontend
+CMD ["npm", "start"]

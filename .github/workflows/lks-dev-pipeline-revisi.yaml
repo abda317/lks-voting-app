@@ -1,0 +1,50 @@
+name: lks-dev-pipeline
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build and Push Vote Image
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/lks-voting-image:vote-dev-latest ./vote
+          docker push ${{ steps.login-ecr.outputs.registry }}/lks-voting-image:vote-dev-latest
+
+      - name: Build and Push Result Image
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/lks-voting-image:result-dev-latest ./result
+          docker push ${{ steps.login-ecr.outputs.registry }}/lks-voting-image:result-dev-latest
+
+      - name: Build and Push Worker Image
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/lks-voting-image:worker-dev-latest ./worker
+          docker push ${{ steps.login-ecr.outputs.registry }}/lks-voting-image:worker-dev-latest
+
+  deploy:
+    runs-on: [self-hosted, master]
+    needs: build
+    steps:
+      - name: Deploy Vote App
+        run: |
+          docker service update --image ${{ steps.login-ecr.outputs.registry }}/lks-voting-image:vote-dev-latest vote
+          docker service update --image ${{ steps.login-ecr.outputs.registry }}/lks-voting-image:result-dev-latest result
+          docker service update --image ${{ steps.login-ecr.outputs.registry }}/lks-voting-image:worker-dev-latest worker

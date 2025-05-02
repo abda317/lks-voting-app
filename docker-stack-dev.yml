@@ -1,0 +1,26 @@
+version: "3"
+
+services:
+  vote:
+    image: 562618482633.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:vote-dev-latest
+    ports:
+      - "8080:80"
+
+  result:
+    image: 562618482633.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:result-dev-latest
+    ports:
+      - "8081:80"
+
+  worker:
+    image: 562618482633.dkr.ecr.us-east-1.amazonaws.com/lks-voting-image:worker-dev-latest
+    depends_on:
+      - redis
+      - db
+
+  redis:
+    image: redis
+
+  db:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: example
