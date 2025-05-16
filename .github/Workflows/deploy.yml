@@ -3,26 +3,43 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - main  # Bisa ditambah 'master' kalau mau trigger dari dua branch
+      - main  # ganti ke "main" kalau branch kamu bukan master
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+    - name: Checkout source code
+      uses: actions/checkout@v3
 
-    - name: Set up SSH
-      uses: webfactory/ssh-agent@v0.5.4
+    - name: Create deploy folder
+      run: mkdir -p output
+
+    - name: Create tarball of app
+      run: tar --exclude=output -czf output/app.tar.gz .
+
+    - name: Copy files to EC2
+      uses: appleboy/scp-action@v0.1.4
       with:
-        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SSH_KEY }}
+        port: 22
+        source: "output/app.tar.gz"
+        target: "/home/ec2-user"
 
-    - name: Deploy to EC2
-      run: |
-        ssh -o StrictHostKeyChecking=no ec2-user@54.224.137.106 << 'EOF'
-          cd /home/ec2-user/app || exit 1
-          git pull origin main || exit 1
-          docker compose down || true
-          docker compose up -d --build || exit 1
-        EOF
+    - name: SSH into EC2 and deploy
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SSH_KEY }}
+        port: 22
+        script: |
+          cd /home/ec2-user
+          rm -rf app
+          mkdir app
+          tar -xzf app.tar.gz -C app
+          cd app
+          docker stack deploy -c docker-compose.yml lks
