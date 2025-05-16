@@ -1,0 +1,39 @@
+version: "3"
+
+services:
+  vote:
+    image: dockersamples/examplevotingapp_vote:latest
+    ports:
+      - "8080:80"
+    networks:
+      - front
+      - back
+
+  result:
+    image: dockersamples/examplevotingapp_result:latest
+    ports:
+      - "8081:80"
+    networks:
+      - front
+      - back
+
+  worker:
+    image: dockersamples/examplevotingapp_worker:latest
+    networks:
+      - back
+
+  redis:
+    image: redis:alpine
+    networks:
+      - back
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_PASSWORD: example
+    networks:
+      - back
+
+networks:
+  front:
+  back:
