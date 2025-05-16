@@ -3,41 +3,26 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - main
+      - main  # Bisa ditambah 'master' kalau mau trigger dari dua branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Create tarball
-        run: |
-          mkdir -p output
-          tar --exclude=output -czf output/app.tar.gz .
+    - name: Set up SSH
+      uses: webfactory/ssh-agent@v0.5.4
+      with:
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
-      - name: Copy file to EC2
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: 22
-          source: "output/app.tar.gz"
-          target: "/home/ec2-user"
-
-      - name: Connect & Deploy
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: 22
-          script: |
-            cd /home/ec2-user
-            rm -rf app && mkdir app
-            tar -xzf app.tar.gz -C app
-            cd app
-            docker stack deploy -c docker-compose.yml lks
+    - name: Deploy to EC2
+      run: |
+        ssh -o StrictHostKeyChecking=no ec2-user@54.224.137.106 << 'EOF'
+          cd /home/ec2-user/app || exit 1
+          git pull origin main || exit 1
+          docker compose down || true
+          docker compose up -d --build || exit 1
+        EOF
