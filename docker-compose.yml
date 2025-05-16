@@ -1,0 +1,31 @@
+version: "3"
+
+services:
+  vote:
+    build: ./vote
+    ports:
+      - "5007:80"
+    depends_on:
+      - redis
+
+  result:
+    build: ./result
+    ports:
+      - "5008:80"
+    depends_on:
+      - db
+
+  worker:
+    build: ./worker
+    depends_on:
+      - redis
+      - db
+
+  redis:
+    image: "redis:alpine"
+
+  db:
+    image: "postgres:13"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres

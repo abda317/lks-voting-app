@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Voting Results</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+      socket.on('vote', function (message) {
+        const data = JSON.parse(message);
+        const el = document.getElementById(data.vote);
+        el.innerText = parseInt(el.innerText) + 1;
+      });
+    </script>
+  </head>
+  <body>
+    <h1>Voting Results</h1>
+    <p>Cats: <span id="cat">0</span></p>
+    <p>Dogs: <span id="dog">0</span></p>
+  </body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "result",
+  "version": "1.0.0",
+  "description": "Voting results service",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "redis": "^3.1.2",
+    "socket.io": "^4.0.0"
+  }
+}
